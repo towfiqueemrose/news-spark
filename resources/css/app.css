@@ -1,0 +1,162 @@
+/* resources/css/app.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+[x-cloak] { display: none !important; }
+
+/* News card hover effect */
+.news-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.news-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+html {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Prose styles for news content */
+.prose {
+    max-width: 65ch;
+    color: inherit;
+}
+
+.prose :where(p):not(:where([class~="not-prose"] *)) {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+}
+
+.prose :where(ul):not(:where([class~="not-prose"] *)) {
+    list-style-type: disc;
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    padding-left: 1.625em;
+}
+
+.prose :where(ol):not(:where([class~="not-prose"] *)) {
+    list-style-type: decimal;
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    padding-left: 1.625em;
+}
+
+.prose :where(blockquote):not(:where([class~="not-prose"] *)) {
+    font-style: italic;
+    margin-top: 1.6em;
+    margin-bottom: 1.6em;
+    padding-left: 1em;
+    border-left: 0.25em solid #e5e7eb;
+}
+
+.prose :where(h1):not(:where([class~="not-prose"] *)) {
+    font-size: 2.25em;
+    margin-top: 0;
+    margin-bottom: 0.8888889em;
+    line-height: 1.1111111;
+    font-weight: 800;
+}
+
+.prose :where(h2):not(:where([class~="not-prose"] *)) {
+    font-size: 1.5em;
+    margin-top: 2em;
+    margin-bottom: 1em;
+    line-height: 1.3333333;
+    font-weight: 700;
+}
+
+.prose :where(img):not(:where([class~="not-prose"] *)) {
+    margin-top: 2em;
+    margin-bottom: 2em;
+}
+
+/* Dark mode prose */
+.dark .prose :where(blockquote):not(:where([class~="not-prose"] *)) {
+    border-left-color: #374151;
+}
+
+.dark .prose :where(hr):not(:where([class~="not-prose"] *)) {
+    border-color: #374151;
+}
+
+/* Profile Image Upload Preview */
+#imagePreview {
+    transition: all 0.3s ease;
+}
+
+#imagePreview:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Bookmark Table */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .card-body .row > div {
+        margin-bottom: 1rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+}
+
+
+
+/* resources/css/app.css or add to your existing CSS */
+
+/* Hide scrollbar for horizontal category navigation */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+}
+
+/* Smooth scrolling for category navigation */
+.scrollbar-hide {
+    scroll-behavior: smooth;
+}
+
+/* Optional: Add arrow indicators for mobile scrolling */
+@media (max-width: 768px) {
+    .category-nav-container {
+        position: relative;
+    }
+    
+    .category-nav-container::after {
+        content: '→';
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        background: linear-gradient(to right, transparent, white);
+        padding-left: 20px;
+        color: #6b7280;
+        font-size: 18px;
+        pointer-events: none;
+    }
+    
+    .dark .category-nav-container::after {
+        background: linear-gradient(to right, transparent, #1f2937);
+    }
+}
