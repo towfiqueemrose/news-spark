@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+    image: laravel-app
+    container_name: laravel-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    ports:
+      - "8000:9000"
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: aws-0-ap-southeast-1.pooler.supabase.com
+      DB_PORT: 5432
+      DB_DATABASE: postgres
+      DB_USERNAME: postgres.dmgsjqyoteglfyznjvvh
+      DB_PASSWORD: realpool55
+      DB_SSL_MODE: require

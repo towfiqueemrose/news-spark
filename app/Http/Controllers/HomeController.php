@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\News;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
 {
@@ -22,11 +23,13 @@ class HomeController extends Controller
             ->take(2)
             ->get();
 
-        $mostLikedNews = News::with(['category'])
-            ->withCount('likes')
-            ->orderBy('likes_count', 'desc')
-            ->take(2)
-            ->get();
+            $mostLikedNews = Cache::remember('most_liked_news', 600, function () {
+                return News::with(['category'])
+                    ->withCount('likes')
+                    ->orderBy('likes_count', 'desc')
+                    ->take(2)
+                    ->get();
+            });
 
         $categories = Category::withCount('news')
             ->has('news')
@@ -36,13 +39,15 @@ class HomeController extends Controller
             ->take(7)
             ->get();
 
-        $bangladeshNews = News::with('category')
-            ->whereHas('category', function ($query) {
-                $query->where('name', 'Bangladesh');
-            })
-            ->latest()
-            ->take(7)
-            ->get();
+            $bangladeshNews = Cache::remember('bangladesh_news', 600, function () {
+                return News::with('category')
+                    ->whereHas('category', function ($query) {
+                        $query->where('name', 'Bangladesh');
+                    })
+                    ->latest()
+                    ->take(7)
+                    ->get();
+            });
 
         return view('home', compact('latestNews', 'topNews', 'categories', 'mostLikedNews', 'bangladeshNews'));
     }
