@@ -4,7 +4,7 @@ FROM php:8.2-apache
 # Set working directory
 WORKDIR /var/www/html
 
-# Install system dependencies and Node.js 18.x
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -15,8 +15,18 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs
+    ca-certificates \
+    gnupg \
+    lsb-release
+
+# Install Node.js 18.x properly
+RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x bullseye main" | tee /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update && \
+    apt-get install -y nodejs
+
+# Verify Node.js and npm installation
+RUN node --version && npm --version
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -33,19 +43,19 @@ COPY composer.json composer.lock ./
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Copy package.json and package-lock.json (if exists)
-COPY package*.json ./
+# Copy package.json and vite.config.js first
+COPY package*.json vite.config.js ./
 
-# Install Node.js dependencies
-RUN npm ci --only=production
+# Install Node.js dependencies (including dev dependencies for build)
+RUN npm install
 
 # Copy the rest of the application
 COPY . .
 
-# Set proper ownership
+# Set proper ownership before building
 RUN chown -R www-data:www-data /var/www/html
 
-# Build assets
+# Build assets with verbose output
 RUN npm run build
 
 # Run composer scripts
