@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: news-spark
+    env: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    buildCommand: "composer install --no-dev && php artisan config:cache && php artisan migrate --force"
+    startCommand: "php artisan serve --host=0.0.0.0 --port=80"
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: news-spark-db
+          property: host
+      - key: DB_PORT
+        value: 5432
+      - key: DB_DATABASE
+        fromDatabase:
+          name: news-spark-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: news-spark-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: news-spark-db
+          property: password
+
+databases:
+  - name: news-spark-db
+    plan: free
+    region: singapore
+    postgresMajorVersion: 15
