@@ -1,36 +1,61 @@
-FROM php:8.3-fpm
+# Use the official PHP 8.2 image with Apache
+FROM php:8.2-apache
 
-# সিস্টেম ডিপেন্ডেন্সি ইনস্টল করুন
+# Set working directory
+WORKDIR /var/www/html
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    git \
+    curl \
     libpng-dev \
-    libjpeg-dev \
     libonig-dev \
     libxml2-dev \
-    zip unzip git curl \
     libpq-dev \
-    nodejs npm \
-    && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd
+    zip \
+    unzip \
+    nodejs \
+    npm
 
-# কম্পোজার ইনস্টল করুন
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd
+
+# Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# ওয়ার্কিং ডিরেক্টরি সেট করুন
-WORKDIR /var/www
+# Copy existing application directory contents
+COPY . /var/www/html
 
-# প্রজেক্ট ফাইল কপি করুন
-COPY . .
+# Copy existing application directory permissions
+COPY --chown=www-data:www-data . /var/www/html
 
-# ডিপেন্ডেন্সি ইনস্টল করুন এবং অ্যাসেট বিল্ড করুন
-RUN composer install --no-dev \
-    && npm install \
-    && npm run build \
-    && php artisan config:cache \
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
+
+# Install Node.js dependencies and build assets
+RUN npm install && npm run build
+
+# Enable Apache rewrite module
+RUN a2enmod rewrite
+
+# Copy Apache configuration
+COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
+
+# Set proper permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage \
+    && chmod -R 755 /var/www/html/bootstrap/cache
+
+# Generate application key and run migrations
+RUN php artisan config:cache \
+    && php artisan route:cache \
     && php artisan view:cache
 
-# পারমিশন সেট করুন
-RUN chown -R www-data:www-data /var/www
+# Expose port 80
+EXPOSE 80
 
-EXPOSE 9000
-
-CMD ["php-fpm"]
+# Start Apache
+CMD ["apache2-foreground"]
