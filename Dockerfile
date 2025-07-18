@@ -4,7 +4,7 @@ FROM php:8.2-apache
 # Set working directory
 WORKDIR /var/www/html
 
-# Install system dependencies
+# Install system dependencies and Node.js 18.x
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -12,31 +12,44 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libpq-dev \
+    libzip-dev \
     zip \
     unzip \
-    nodejs \
-    npm
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd zip
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy existing application directory contents
-COPY . /var/www/html
-
-# Copy existing application directory permissions
-COPY --chown=www-data:www-data . /var/www/html
+# Copy composer files first for better caching
+COPY composer.json composer.lock ./
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Install Node.js dependencies and build assets
-RUN npm install && npm run build
+# Copy package.json and package-lock.json (if exists)
+COPY package*.json ./
+
+# Install Node.js dependencies
+RUN npm ci --only=production
+
+# Copy the rest of the application
+COPY . .
+
+# Set proper ownership
+RUN chown -R www-data:www-data /var/www/html
+
+# Build assets
+RUN npm run build
+
+# Run composer scripts
+RUN composer run-script post-autoload-dump
 
 # Enable Apache rewrite module
 RUN a2enmod rewrite
@@ -49,13 +62,21 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Generate application key and run migrations
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
+# Clear and cache config (without DB connection)
+RUN php artisan config:clear \
+    && php artisan route:clear \
+    && php artisan view:clear
+
+# Create a startup script
+RUN echo '#!/bin/bash\n\
+php artisan config:cache\n\
+php artisan route:cache\n\
+php artisan view:cache\n\
+apache2-foreground' > /usr/local/bin/start-app.sh \
+    && chmod +x /usr/local/bin/start-app.sh
 
 # Expose port 80
 EXPOSE 80
 
-# Start Apache
-CMD ["apache2-foreground"]
+# Start with the startup script
+CMD ["/usr/local/bin/start-app.sh"]
