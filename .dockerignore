@@ -8,3 +8,12 @@ README.md
 Dockerfile
 .dockerignore
 vendor
+.vite
+public/build
+public/hot
+storage/app/public
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+storage/logs
+bootstrap/cache/*.php
