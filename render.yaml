@@ -8,28 +8,36 @@ services:
     envVars:
       - key: APP_ENV
         value: production
-      - key: APP_KEY
-        value: base64:S3cW7PzKnzVf07pUpSpqn2K5kSuX1njP1fFHsqlLeGg=
       - key: APP_DEBUG
         value: false
       - key: APP_URL
-        value: https://<your-render-url>.onrender.com
+        value: https://news-spark.onrender.com
+      
+      # ডাটাবেস কনফিগ
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
-        value: aws-0-ap-southeast-1.pooler.supabase.com
+        value: db.dmgsjqyoteglfyznjvvh.supabase.co
       - key: DB_PORT
         value: "5432"
       - key: DB_DATABASE
         value: postgres
       - key: DB_USERNAME
-        value: postgres.dmgsjqyoteglfyznjvvh
+        value: postgres
       - key: DB_PASSWORD
         value: realpool55
       - key: DB_SCHEMA
         value: public
       - key: DB_SSL_MODE
         value: require
+      
+      # SSL সার্টিফিকেট কনফিগ
+      - key: PGSSLMODE
+        value: verify-full
+      - key: PGSSLROOTCERT
+        value: /etc/ssl/certs/ca-certificates.crt
+      
+      # ক্লাউডিনারি কনফিগ
       - key: CLOUDINARY_CLOUD_NAME
         value: dntcguitw
       - key: CLOUDINARY_API_KEY
