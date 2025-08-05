@@ -1,34 +1,41 @@
-FROM php:8.2-apache
+# Stage 1: dependencies & build
+FROM php:8.2-fpm
 
-# সিস্টেম ডিপেন্ডেন্সি ইনস্টল
+# system deps
 RUN apt-get update && apt-get install -y \
-    git unzip libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip opcache
+    git \
+    unzip \
+    libonig-dev \
+    libzip-dev \
+    libpq-dev \
+    zip \
+    curl \
+    && docker-php-ext-install pdo pdo_pgsql mbstring zip opcache
 
-# Apache কনফিগারেশন
-RUN a2enmod rewrite
-COPY docker/000-default.conf /etc/apache2/sites-available/000-default.conf
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# কম্পোজার ইনস্টল
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# অ্যাপ্লিকেশন সেটআপ
+# Set working directory
 WORKDIR /var/www/html
+
+# Copy composer files first (for better cache)
+COPY composer.json composer.lock ./
+
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+# Copy app
 COPY . .
 
-# Laravel স্ট্রাকচার তৈরি
-RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache
+# Generate optimized autoload (if not via composer scripts)
+RUN composer dump-autoload -o
 
-# ডিপেন্ডেন্সি ইনস্টল
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# Laravel কনফিগারেশন
-RUN php artisan key:generate --force \
-    && php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
-
-# পারমিশন সেট
+# Clear & cache config (will run during container start if needed)
+# Permissions (if you need)
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-EXPOSE 80
+# Expose port if needed (Render handles routing, so not strictly required)
+EXPOSE 9000
+
+# Start PHP-FPM
+CMD ["php-fpm"]
