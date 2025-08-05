@@ -1,48 +1,39 @@
 services:
   - type: web
-    name: news-spark
+    name: news-spark-web
     env: docker
-    plan: free
     dockerfilePath: ./Dockerfile
-    autoDeploy: true
+    # build command, if needed override: (Render uses Dockerfile)
+    plan: free
     envVars:
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
-        value: false
+        value: "false"
       - key: APP_URL
-        value: https://news-spark.onrender.com
-      
-      # ডাটাবেস কনফিগ
-      - key: DB_CONNECTION
-        value: pgsql
-      - key: DB_HOST
-        value: db.dmgsjqyoteglfyznjvvh.supabase.co
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_DATABASE
-        value: postgres
-      - key: DB_USERNAME
-        value: postgres
-      - key: DB_PASSWORD
-        value: realpool55
-      - key: DB_SCHEMA
-        value: public
-      - key: DB_SSL_MODE
-        value: require
-      
-      # SSL সার্টিফিকেট কনফিগ
-      - key: PGSSLMODE
-        value: verify-full
-      - key: PGSSLROOTCERT
-        value: /etc/ssl/certs/ca-certificates.crt
-      
-      # ক্লাউডিনারি কনফিগ
-      - key: CLOUDINARY_CLOUD_NAME
-        value: dntcguitw
-      - key: CLOUDINARY_API_KEY
-        value: 687467651322471
-      - key: CLOUDINARY_API_SECRET
-        value: _StwvUBpt0Xq6-hB2YisBwGzDlA
-      - key: CLOUDINARY_URL
-        value: cloudinary://687467651322471:_StwvUBpt0Xq6-hB2YisBwGzDlA@dntcguitw
+        value: https://news-spark.onrender.com  # আপনার বাস্তব ডোমেইন
+      - key: DATABASE_URL
+        fromDatabase: null  # আপনি Supabase এ থাকলে এখানে DIRECTLY ENV সেট করবেন Render UIতে
+    # you won't put secrets here; set them in Render dashboard as secret vars
+
+  - type: worker
+    name: news-spark-queue
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    startCommand: php artisan queue:work --sleep=3 --tries=3 --timeout=60
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+
+  - type: cron
+    name: news-spark-scheduler
+    schedule: "*/5 * * * *" # প্রতি ৫ মিনিটে চালাবে
+    command: php artisan schedule:run --verbose --no-interaction
+    env:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
